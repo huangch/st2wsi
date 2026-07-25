@@ -22,15 +22,15 @@ This allows spatial transcriptomics cell coordinates to be transformed onto the 
 
 ### From JAR (recommended)
 
-1. Download the latest release JAR from [Releases](https://github.com/YOUR_USERNAME/ST2WSI_Registration/releases)
+1. Download the latest release JAR from [Releases](https://github.com/huangch/st2wsi/releases)
 2. Copy the JAR to your Fiji `plugins/` directory
 3. Restart Fiji
 
 ### From source
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/ST2WSI_Registration.git
-cd ST2WSI_Registration
+git clone https://github.com/huangch/st2wsi.git
+cd st2wsi
 mvn clean package
 cp target/ST2WSI_Registration-*.jar /path/to/Fiji.app/plugins/
 ```

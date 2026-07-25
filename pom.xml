@@ -79,14 +79,14 @@
 	</mailingLists>
 
 	<scm>
-		<connection>scm:git:https://github.com/peteryhuang/ST2WSI_Registration</connection>
-		<developerConnection>scm:git:git@github.com:peteryhuang/ST2WSI_Registration</developerConnection>
+		<connection>scm:git:https://github.com/huangch/st2wsi</connection>
+		<developerConnection>scm:git:git@github.com:huangch/st2wsi</developerConnection>
 		<tag>HEAD</tag>
-		<url>https://github.com/peteryhuang/ST2WSI_Registration</url>
+		<url>https://github.com/huangch/st2wsi</url>
 	</scm>
 	<issueManagement>
 		<system>GitHub Issues</system>
-		<url>https://github.com/peteryhuang/ST2WSI_Registration/issues</url>
+		<url>https://github.com/huangch/st2wsi/issues</url>
 	</issueManagement>
 	<ciManagement>
 		<system>GitHub Actions</system>
