@@ -19,7 +19,31 @@
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
+package st2wsi_registration;
+
+
+import ij.IJ;
+import ij.ImageJ;
+import st2wsi_registration.ST2WSI_Registration;
+
 /**
-  * Provides the main and utility classes to run the ImageJ/Fiji plugin {@code bUnwarpJ_}: consistent and elastic image registration.
-  */
-package bunwarpj;
+ * Class to test the plugin GUI using two grayscale images.
+ *
+ */
+public class TestGUI {
+
+	/**
+	 * Main method to test and debug the bUnwarpJ GUI
+	 *  
+	 * @param args
+	 */
+	public static void main( final String[] args )
+	{		
+		ImageJ.main( args );
+
+		IJ.open( TestGUI.class.getResource( "/files/bridge.png" ).getFile() );
+		IJ.open( TestGUI.class.getResource( "/files/deformed-bridge.png" ).getFile() );
+
+		new ST2WSI_Registration().run( null );
+	}
+}
