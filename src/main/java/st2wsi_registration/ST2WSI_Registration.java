@@ -2,7 +2,7 @@
  * #%L
  * ST2WSI_Registration plugin for Fiji.
  * %%
- * Copyright (C) 2005 - 2020 Fiji developers.
+ * Copyright (C) 2024 WSInsight developers.
  * %%
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as
@@ -22,36 +22,36 @@
 package st2wsi_registration;
 
 /**
- * ST2WSI_Registration plugin for ImageJ and Fiji.
- * Copyright (C) 2005-2017 Ignacio Arganda-Carreras and Jan Kybic
+ * ST2WSI_Registration: Spatial Transcriptomics to Whole Slide Image Registration
+ * 
+ * An ImageJ/Fiji plugin for registering DAPI images from spatial transcriptomics
+ * platforms (10x Xenium, Visium, etc.) to H&E-stained whole slide images (WSI).
+ * 
+ * This implements the registration workflow described in:
+ *   Huang et al. "WSInsight: an open platform for whole slide image analytics
+ *   in computational pathology." npj Precision Oncology (2025).
+ *   https://doi.org/10.1038/s41698-025-00841-9
+ * 
+ * The pipeline consists of:
+ *   1. Colour deconvolution to extract haematoxylin channel from H&E
+ *   2. SIFT-based affine alignment for coarse registration
+ *   3. B-spline elastic registration (bUnwarpJ) for fine deformable alignment
+ * 
+ * Usage (headless):
+ *   /path/to/Fiji.app/ImageJ-linux64 \
+ *       --headless --ij2 \
+ *       --run "st2wsi_registration.ST2WSI_Registration" \
+ *       "outputDir=/data/out \
+ *        refImagePath=/data/dapi.ome.tif \
+ *        tgtImagePath=/data/wsi.ome.tif \
+ *        refSeries=3 \
+ *        tgtSeries=3 \
+ *        refFlipped=false \
+ *        refRotated=90 \
+ *        tgtChannel=Hematoxylon"
  *
- * More information at http://imagej.net/BUnwarpJ/
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation (http://www.gnu.org/licenses/gpl.txt )
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- *
- * /path/to/Fiji.app/ImageJ-linux64 \
-	  --headless --ij2 \
-	  --run "st2wsi_registration.ST2WSI_Registration" \
-	  "outputDir=/data/out \
-	   refImagePath=/data/dapi.ome.tif \
-	   tgtImagePath=/data/wsi.ome.tif \
-	   refSeries=3 \
-	   tgtSeries=3 \
-	   refFlipped=false \
-	   refRotated=90 \
-	   tgtChannel=Hematoxylon"
-
+ * This plugin builds upon bUnwarpJ by Ignacio Arganda-Carreras and Jan Kybic,
+ * and the SIFT implementation from MPICBG by Stephan Saalfeld.
  */
 
 import ij.IJ;

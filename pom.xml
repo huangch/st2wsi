@@ -14,12 +14,12 @@
 	<version>2.6.14-SNAPSHOT</version>
 
 	<name>ST2WSI_Registration</name>
-	<description>ST2WSI_Registration plugin for Fiji.</description>
-	<url>https://imagej.net/BUnwarpJ</url>
-	<inceptionYear>2005</inceptionYear>
+	<description>Spatial Transcriptomics to Whole Slide Image Registration plugin for Fiji. Registers DAPI images from spatial transcriptomics platforms to H&amp;E whole slide images using SIFT-based affine alignment and bUnwarpJ elastic registration.</description>
+	<url>https://github.com/peteryhuang/ST2WSI_Registration</url>
+	<inceptionYear>2024</inceptionYear>
 	<organization>
-		<name>Fiji</name>
-		<url>https://fiji.sc/</url>
+		<name>WSInsight</name>
+		<url>https://github.com/peteryhuang/wsinsight</url>
 	</organization>
 	<licenses>
 		<license>
@@ -31,28 +31,23 @@
 
 	<developers>
 		<developer>
-			<id>iarganda</id>
-			<name>Ignacio Arganda-Carreras</name>
-			<url>https://imagej.net/User:Iarganda</url>
+			<id>peteryhuang</id>
+			<name>Chao-Hui Huang</name>
+			<email>chaohuihuang@gmail.com</email>
 			<roles>
-				<role>founder</role>
 				<role>lead</role>
-				<role>debugger</role>
-				<role>reviewer</role>
-				<role>support</role>
-				<role>maintainer</role>
-			</roles>
-		</developer>
-		<developer>
-			<id>ctrueden</id>
-			<name>Curtis Rueden</name>
-			<url>https://imagej.net/User:Rueden</url>
-			<roles>
+				<role>developer</role>
 				<role>maintainer</role>
 			</roles>
 		</developer>
 	</developers>
 	<contributors>
+		<contributor>
+			<name>Ignacio Arganda-Carreras</name>
+			<url>https://imagej.net/User:Iarganda</url>
+			<roles><role>founder</role></roles>
+			<properties><id>iarganda</id></properties>
+		</contributor>
 		<contributor>
 			<name>Jan Kybic</name>
 			<roles><role>founder</role></roles>
@@ -84,24 +79,24 @@
 	</mailingLists>
 
 	<scm>
-		<connection>scm:git:https://github.com/fiji/ST2WSI_Registration</connection>
-		<developerConnection>scm:git:git@github.com:fiji/ST2WSI_Registration</developerConnection>
+		<connection>scm:git:https://github.com/peteryhuang/ST2WSI_Registration</connection>
+		<developerConnection>scm:git:git@github.com:peteryhuang/ST2WSI_Registration</developerConnection>
 		<tag>HEAD</tag>
-		<url>https://github.com/fiji/ST2WSI_Registration</url>
+		<url>https://github.com/peteryhuang/ST2WSI_Registration</url>
 	</scm>
 	<issueManagement>
 		<system>GitHub Issues</system>
-		<url>https://github.com/fiji/ST2WSI_Registration/issues</url>
+		<url>https://github.com/peteryhuang/ST2WSI_Registration/issues</url>
 	</issueManagement>
 	<ciManagement>
 		<system>GitHub Actions</system>
-		<url>https://github.com/fiji/ST2WSI_Registration/actions</url>
+		<url>https://github.com/peteryhuang/ST2WSI_Registration/actions</url>
 	</ciManagement>
 
 	<properties>
 		<package-name>st2wsi_registration</package-name>
 		<license.licenseName>gpl_v3</license.licenseName>
-		<license.copyrightOwners>Fiji developers.</license.copyrightOwners>
+		<license.copyrightOwners>WSInsight developers.</license.copyrightOwners>
 
 		<!-- NB: Deploy releases to the SciJava Maven repository. -->
 		<releaseProfiles>sign,deploy-to-scijava</releaseProfiles>
