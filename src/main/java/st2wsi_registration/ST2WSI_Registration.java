@@ -321,6 +321,9 @@ public class ST2WSI_Registration implements PlugIn, ActionListener {
         double consistencyWeight = Double.parseDouble(params.getOrDefault("consistencyWeight", "10.0"));
         double stopThreshold = Double.parseDouble(params.getOrDefault("stopThreshold", "0.01"));
 
+        // Verbose mode: keep all windows open for debugging
+        boolean verbose = Boolean.parseBoolean(params.getOrDefault("verbose", "false"));
+
         boolean headless = GraphicsEnvironment.isHeadless();
         boolean cliMode = headless &&
                           !outputDir.isEmpty() &&
@@ -447,6 +450,9 @@ public class ST2WSI_Registration implements PlugIn, ActionListener {
                 gd.addNumericField("Consistency_weight:", consistencyWeight, 2);
                 gd.addNumericField("Stop_threshold:", stopThreshold, 3);
 
+                gd.addMessage("=== Output Options ===");
+                gd.addCheckbox("Verbose (keep all intermediate windows open)", verbose);
+
                 gd.showDialog();
                 if (gd.wasCanceled())
                     return;
@@ -497,6 +503,7 @@ public class ST2WSI_Registration implements PlugIn, ActionListener {
                 imageWeight = gd.getNextNumber();
                 consistencyWeight = gd.getNextNumber();
                 stopThreshold = gd.getNextNumber();
+                verbose = gd.getNextBoolean();
 
                 refImg = ij.WindowManager.getImage(wList[refIndex]);
                 tgtImg = ij.WindowManager.getImage(wList[targetIndex]);
@@ -902,6 +909,24 @@ public class ST2WSI_Registration implements PlugIn, ActionListener {
                     "registration_params.json/direct_transf.txt saved to:\n" +
                     outputDir
                 );
+            }
+
+            // Auto-close intermediate windows unless verbose mode is enabled
+            if (!headless && !verbose && WindowManager.getIDList() != null) {
+                // Close preprocessed reference and target images
+                if (refImg != null && refImg.getWindow() != null) {
+                    refImg.changes = false;  // prevent save prompt
+                    refImg.close();
+                }
+                if (tgtImg != null && tgtImg.getWindow() != null) {
+                    tgtImg.changes = false;
+                    tgtImg.close();
+                }
+                // Close SIFT-only result, keep only final bUnwarpJ result
+                if (transformedStackImg != null && transformedStackImg.getWindow() != null) {
+                    transformedStackImg.changes = false;
+                    transformedStackImg.close();
+                }
             }
 
             if (WindowManager.getIDList() != null)
