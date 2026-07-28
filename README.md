@@ -20,7 +20,7 @@ This allows spatial transcriptomics cell coordinates to be transformed onto the 
 
 ## Installation
 
-### From JAR (recommended)
+### From JAR (recommended for Fiji)
 
 1. Download the latest release JAR from [Releases](https://github.com/huangch/st2wsi/releases)
 2. Copy the JAR to your Fiji `plugins/` directory
@@ -33,6 +33,54 @@ git clone https://github.com/huangch/st2wsi.git
 cd st2wsi
 mvn clean package
 cp target/ST2WSI_Registration-*.jar /path/to/Fiji.app/plugins/
+```
+
+### From Docker
+
+Build the container image:
+
+```bash
+docker build -t st2wsi:latest .
+```
+
+Run the plugin in GUI mode (requires X11 access):
+
+```bash
+docker run --rm -it \
+  -e DISPLAY=$DISPLAY \
+  -v /tmp/.X11-unix:/tmp/.X11-unix \
+  st2wsi:latest gui
+```
+
+Run the plugin in headless CLI mode:
+
+```bash
+docker run --rm -it \
+  -v /your/data:/data \
+  st2wsi:latest cli \
+  -o /data/out \
+  -r /data/dapi.ome.tif \
+  -t /data/wsi.ome.tif \
+  --ref-series 3 \
+  --tgt-series 3 \
+  --ref-rotated 90 \
+  --tgt-channel Hematoxylon
+```
+
+### Local shell helper
+
+A convenience wrapper is included for local headless execution:
+
+```bash
+chmod +x run_st2wsi.sh
+./run_st2wsi.sh \
+  -o /data/out \
+  -r /data/dapi.ome.tif \
+  -t /data/wsi.ome.tif \
+  --ref-series 3 \
+  --tgt-series 3 \
+  --ref-rotated 90 \
+  --tgt-channel Hematoxylon
 ```
 
 ## Usage
@@ -63,6 +111,8 @@ cp target/ST2WSI_Registration-*.jar /path/to/Fiji.app/plugins/
      refRotated=90 \
      tgtChannel=Hematoxylon"
 ```
+
+The same parameters are accepted by the Docker entrypoint and the local wrapper script.
 
 ### Parameters
 

@@ -1,0 +1,28 @@
+services:
+  st2wsi:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: st2wsi:latest
+    stdin_open: true
+    tty: true
+    working_dir: /workspace
+    volumes:
+      - ./data:/data
+    environment:
+      - DISPLAY=${DISPLAY:-}
+    network_mode: host
+    command: ["help"]
+
+  st2wsi-gui:
+    extends:
+      service: st2wsi
+    command: ["gui"]
+    volumes:
+      - ./data:/data
+      - /tmp/.X11-unix:/tmp/.X11-unix
+
+  st2wsi-cli:
+    extends:
+      service: st2wsi
+    command: ["cli", "-o", "/data/out", "-r", "/data/dapi.ome.tif", "-t", "/data/wsi.ome.tif"]
