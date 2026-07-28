@@ -1,4 +1,5 @@
 /*-
+ * SPDX-License-Identifier: GPL-3.0-or-later
  * #%L
  * ST2WSI_Registration plugin for Fiji.
  * %%

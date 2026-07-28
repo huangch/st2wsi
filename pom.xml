@@ -23,11 +23,21 @@
 	</organization>
 	<licenses>
 		<license>
-			<name>GNU General Public License v3+</name>
-			<url>https://www.gnu.org/licenses/gpl.html</url>
+			<name>GNU General Public License v3.0 or later</name>
+			<url>https://www.gnu.org/licenses/gpl-3.0.html</url>
 			<distribution>repo</distribution>
 		</license>
 	</licenses>
+
+	<properties>
+		<package-name>st2wsi_registration</package-name>
+		<license.licenseName>gpl_v3</license.licenseName>
+		<license.copyrightOwners>WSInsight developers.</license.copyrightOwners>
+		<project.license>GPL-3.0-or-later</project.license>
+
+		<!-- NB: Deploy releases to the SciJava Maven repository. -->
+		<releaseProfiles>sign,deploy-to-scijava</releaseProfiles>
+	</properties>
 
 	<developers>
 		<developer>
@@ -93,14 +103,6 @@
 		<url>https://github.com/peteryhuang/ST2WSI_Registration/actions</url>
 	</ciManagement>
 
-	<properties>
-		<package-name>st2wsi_registration</package-name>
-		<license.licenseName>gpl_v3</license.licenseName>
-		<license.copyrightOwners>WSInsight developers.</license.copyrightOwners>
-
-		<!-- NB: Deploy releases to the SciJava Maven repository. -->
-		<releaseProfiles>sign,deploy-to-scijava</releaseProfiles>
-	</properties>
 
 	<repositories>
 		<repository>
