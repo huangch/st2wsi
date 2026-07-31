@@ -100,16 +100,16 @@ chmod +x run_st2wsi.sh
 
 ```bash
 /path/to/Fiji.app/ImageJ-linux64 \
-    --headless --ij2 \
+  --headless --ij1 \
     --run "st2wsi_registration.ST2WSI_Registration" \
-    "outputDir=/data/out \
-     refImagePath=/data/dapi.ome.tif \
-     tgtImagePath=/data/wsi.ome.tif \
-     refSeries=3 \
-     tgtSeries=3 \
-     refFlipped=false \
-     refRotated=90 \
-     tgtChannel=Hematoxylon"
+  "outputDir=/data/out \
+   refImagePath=/data/dapi.ome.tif \
+   tgtImagePath=/data/wsi.ome.tif \
+   refSeries=3 \
+   tgtSeries=3 \
+   refFlipped=false \
+   refRotated=90 \
+   tgtChannel=Hematoxylon"
 ```
 
 The same parameters are accepted by the Docker entrypoint and the local wrapper script.

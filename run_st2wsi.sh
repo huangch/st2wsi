@@ -4,7 +4,7 @@
 set -euo pipefail
 
 # --- Configuration ---
-FIJI="${FIJI_PATH:-/path/to/Fiji.app/ImageJ-linux64}"
+FIJI="${FIJI_PATH:-/opt/Fiji.app/ImageJ-linux64}"
 
 # --- Defaults ---
 OUTPUT_DIR=""
@@ -71,15 +71,17 @@ echo "  Output dir  : $OUTPUT_DIR"
 echo "  Reference   : $REF_IMAGE (series=$REF_SERIES, flipped=$REF_FLIPPED, rotated=$REF_ROTATED)"
 echo "  Target      : $TGT_IMAGE (series=$TGT_SERIES, channel=$TGT_CHANNEL)"
 
+PLUGIN_ARG="outputDir=$OUTPUT_DIR \
+refImagePath=$REF_IMAGE \
+tgtImagePath=$TGT_IMAGE \
+refSeries=$REF_SERIES \
+tgtSeries=$TGT_SERIES \
+refFlipped=$REF_FLIPPED \
+refRotated=$REF_ROTATED \
+tgtChannel=$TGT_CHANNEL"
+
+ST2WSI_ARG="$PLUGIN_ARG" \
 "$FIJI" --headless --ij2 \
-    --run "st2wsi_registration.ST2WSI_Registration" \
-    "outputDir=$OUTPUT_DIR \
-     refImagePath=$REF_IMAGE \
-     tgtImagePath=$TGT_IMAGE \
-     refSeries=$REF_SERIES \
-     tgtSeries=$TGT_SERIES \
-     refFlipped=$REF_FLIPPED \
-     refRotated=$REF_ROTATED \
-     tgtChannel=$TGT_CHANNEL"
+    --run "st2wsi_registration.ST2WSI_Registration"
 
 echo "Done. Results saved to: $OUTPUT_DIR"

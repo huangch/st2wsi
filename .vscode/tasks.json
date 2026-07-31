@@ -1,0 +1,396 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "build-st2wsi",
+			"type": "shell",
+			"command": "mvn",
+			"args": [
+				"clean",
+				"package"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "build-st2wsi-after-cli-fix",
+			"type": "shell",
+			"command": "mvn",
+			"args": [
+				"clean",
+				"package"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "check-run-st2wsi-script",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"-n",
+				"run_st2wsi.sh"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "build-st2wsi-after-arg-format-fix",
+			"type": "shell",
+			"command": "mvn",
+			"args": [
+				"clean",
+				"package"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "lint-run-script-after-argfix",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"-n",
+				"run_st2wsi.sh"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "imagej-help-options",
+			"type": "shell",
+			"command": "/opt/Fiji.app/ImageJ-linux64",
+			"args": [
+				"--help"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "lint-run-script-ij1",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"-n",
+				"run_st2wsi.sh"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "test-st2wsi-cli-current",
+			"type": "shell",
+			"command": "./run_st2wsi.sh",
+			"args": [
+				"-o",
+				"/workspace/spie2027/data/Human_Breast_Biomarkers_S1_Top_outs",
+				"-r",
+				"/workspace/spie2027/data/Human_Breast_Biomarkers_S1_Top_outs/morphology_focus/ch0000_dapi.ome.tif",
+				"-t",
+				"/workspace/spie2027/data/Human_Breast_Biomarkers_S1_Top_he_image.ome.tif"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "imagej-dry-run",
+			"type": "shell",
+			"command": "/opt/Fiji.app/ImageJ-linux64",
+			"args": [
+				"--dry-run",
+				"--headless",
+				"--ij1",
+				"--run",
+				"st2wsi_registration.ST2WSI_Registration",
+				"outputDir=/tmp refImagePath=/tmp/a tgtImagePath=/tmp/b refSeries=3 tgtSeries=3 refFlipped=false refRotated=90 tgtChannel=Hematoxylon"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "imagej-ij1-batch-test",
+			"type": "shell",
+			"command": "/opt/Fiji.app/ImageJ-linux64",
+			"args": [
+				"--ij1",
+				"--run",
+				"st2wsi_registration.ST2WSI_Registration",
+				"outputDir=/workspace/spie2027/data/Human_Breast_Biomarkers_S1_Top_outs refImagePath=/workspace/spie2027/data/Human_Breast_Biomarkers_S1_Top_outs/morphology_focus/ch0000_dapi.ome.tif tgtImagePath=/workspace/spie2027/data/Human_Breast_Biomarkers_S1_Top_he_image.ome.tif refSeries=3 tgtSeries=3 refFlipped=false refRotated=90 tgtChannel=Hematoxylon",
+				"-batch"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "imagej-run-plugin-noijflag",
+			"type": "shell",
+			"command": "/opt/Fiji.app/ImageJ-linux64",
+			"args": [
+				"--run",
+				"st2wsi_registration.ST2WSI_Registration",
+				"outputDir=/workspace/spie2027/data/Human_Breast_Biomarkers_S1_Top_outs refImagePath=/workspace/spie2027/data/Human_Breast_Biomarkers_S1_Top_outs/morphology_focus/ch0000_dapi.ome.tif tgtImagePath=/workspace/spie2027/data/Human_Breast_Biomarkers_S1_Top_he_image.ome.tif refSeries=3 tgtSeries=3 refFlipped=false refRotated=90 tgtChannel=Hematoxylon",
+				"-batch"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "check-output-timestamps",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"-lc",
+				"ls -l /workspace/spie2027/data/Human_Breast_Biomarkers_S1_Top_outs/direct_transf.txt /workspace/spie2027/data/Human_Breast_Biomarkers_S1_Top_outs/registration_params.json"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "imagej-main-class-test",
+			"type": "shell",
+			"command": "/opt/Fiji.app/ImageJ-linux64",
+			"args": [
+				"--headless",
+				"--full-classpath",
+				"--main-class",
+				"st2wsi_registration.ST2WSI_Registration",
+				"outputDir=/workspace/spie2027/data/Human_Breast_Biomarkers_S1_Top_outs",
+				"refImagePath=/workspace/spie2027/data/Human_Breast_Biomarkers_S1_Top_outs/morphology_focus/ch0000_dapi.ome.tif",
+				"tgtImagePath=/workspace/spie2027/data/Human_Breast_Biomarkers_S1_Top_he_image.ome.tif",
+				"refSeries=3",
+				"tgtSeries=3",
+				"refFlipped=false",
+				"refRotated=90",
+				"tgtChannel=Hematoxylon"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "st2wsi-mainclass-arg-test",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"-lc",
+				"java -Djava.awt.headless=true -cp /opt/Fiji.app/jars/*:/opt/Fiji.app/plugins/*:/workspace/fiji-devel/ST2WSI_Registration/target/ST2WSI_Registration-2.6.14-SNAPSHOT.jar st2wsi_registration.ST2WSI_Registration \"outputDir=/tmp/st2wsi-test refImagePath=/tmp/notfound_dapi.tif tgtImagePath=/tmp/notfound_he.tif refSeries=3 tgtSeries=3 refFlipped=false refRotated=90 tgtChannel=Hematoxylon\""
+			],
+			"isBackground": false
+		},
+		{
+			"label": "st2wsi-mainclass-arg-test2",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"-lc",
+				"java -Djava.awt.headless=true -cp '/opt/Fiji.app/jars/*:/opt/Fiji.app/plugins/*:/workspace/fiji-devel/ST2WSI_Registration/target/ST2WSI_Registration-2.6.14-SNAPSHOT.jar' st2wsi_registration.ST2WSI_Registration \"outputDir=/tmp/st2wsi-test refImagePath=/tmp/notfound_dapi.tif tgtImagePath=/tmp/notfound_he.tif refSeries=3 tgtSeries=3 refFlipped=false refRotated=90 tgtChannel=Hematoxylon\""
+			],
+			"isBackground": false
+		},
+		{
+			"label": "st2wsi-mainclass-arg-test3",
+			"type": "shell",
+			"command": "java",
+			"args": [
+				"-Djava.awt.headless=true",
+				"-cp",
+				"/opt/Fiji.app/jars/*:/opt/Fiji.app/plugins/*:/workspace/fiji-devel/ST2WSI_Registration/target/ST2WSI_Registration-2.6.14-SNAPSHOT.jar",
+				"st2wsi_registration.ST2WSI_Registration",
+				"outputDir=/tmp/st2wsi-test refImagePath=/tmp/notfound_dapi.tif tgtImagePath=/tmp/notfound_he.tif refSeries=3 tgtSeries=3 refFlipped=false refRotated=90 tgtChannel=Hematoxylon"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "st2wsi-mainclass-arg-test4",
+			"type": "shell",
+			"command": "java",
+			"args": [
+				"-Djava.awt.headless=true",
+				"-cp",
+				"/opt/Fiji.app/jars/\\*:/opt/Fiji.app/plugins/\\*:/workspace/fiji-devel/ST2WSI_Registration/target/ST2WSI_Registration-2.6.14-SNAPSHOT.jar",
+				"st2wsi_registration.ST2WSI_Registration",
+				"outputDir=/tmp/st2wsi-test refImagePath=/tmp/notfound_dapi.tif tgtImagePath=/tmp/notfound_he.tif refSeries=3 tgtSeries=3 refFlipped=false refRotated=90 tgtChannel=Hematoxylon"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "find-bioformats-jars",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"-lc",
+				"ls /opt/Fiji.app/jars | grep -Ei 'bio|loci|formats' | head -n 50"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "imagej-run-dummy-noheadless",
+			"type": "shell",
+			"command": "/opt/Fiji.app/ImageJ-linux64",
+			"args": [
+				"--run",
+				"st2wsi_registration.ST2WSI_Registration",
+				"outputDir=/tmp/st2wsi-test refImagePath=/tmp/notfound_dapi.tif tgtImagePath=/tmp/notfound_he.tif refSeries=3 tgtSeries=3 refFlipped=false refRotated=90 tgtChannel=Hematoxylon",
+				"-batch"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "imagej-run-debug",
+			"type": "shell",
+			"command": "/opt/Fiji.app/ImageJ-linux64",
+			"args": [
+				"--debug",
+				"--run",
+				"st2wsi_registration.ST2WSI_Registration",
+				"outputDir=/tmp/st2wsi-test refImagePath=/tmp/notfound_dapi.tif tgtImagePath=/tmp/notfound_he.tif refSeries=3 tgtSeries=3 refFlipped=false refRotated=90 tgtChannel=Hematoxylon",
+				"-batch"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "st2wsi-fallback-batch-run",
+			"type": "shell",
+			"command": "/opt/Fiji.app/ImageJ-linux64",
+			"args": [
+				"--run",
+				"st2wsi_registration.ST2WSI_Registration",
+				"outputDir=/tmp/st2wsi_cli_check refImagePath=/workspace/spie2027/data/Human_Breast_Biomarkers_S1_Top_outs/morphology_focus/ch0000_dapi.ome.tif tgtImagePath=/workspace/spie2027/data/Human_Breast_Biomarkers_S1_Top_he_image.ome.tif refSeries=3 tgtSeries=3 refFlipped=false refRotated=90 tgtChannel=Hematoxylon",
+				"-batch"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "ij1-java-direct-test",
+			"type": "shell",
+			"command": "java",
+			"args": [
+				"-Djava.awt.headless=true",
+				"-Dplugins.dir=/opt/Fiji.app",
+				"-cp",
+				"/opt/Fiji.app/jars/\\*:/opt/Fiji.app/jars/bio-formats/\\*:/opt/Fiji.app/plugins/\\*",
+				"ij.ImageJ",
+				"--run",
+				"st2wsi_registration.ST2WSI_Registration",
+				"outputDir=/tmp/st2wsi-test refImagePath=/tmp/notfound_dapi.tif tgtImagePath=/tmp/notfound_he.tif refSeries=3 tgtSeries=3 refFlipped=false refRotated=90 tgtChannel=Hematoxylon",
+				"-batch"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "build-st2wsi-envarg-fallback",
+			"type": "shell",
+			"command": "mvn",
+			"args": [
+				"clean",
+				"package"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "build-st2wsi-final-cli-fallback",
+			"type": "shell",
+			"command": "mvn",
+			"args": [
+				"-q",
+				"clean",
+				"package"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "check-jar-timestamp",
+			"type": "shell",
+			"command": "ls",
+			"args": [
+				"-l",
+				"target/ST2WSI_Registration-2.6.14-SNAPSHOT.jar"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "test-st2wsi-cli-after-envfix",
+			"type": "shell",
+			"command": "./run_st2wsi.sh",
+			"args": [
+				"-o",
+				"/workspace/spie2027/data/Human_Breast_Biomarkers_S1_Top_outs",
+				"-r",
+				"/workspace/spie2027/data/Human_Breast_Biomarkers_S1_Top_outs/morphology_focus/ch0000_dapi.ome.tif",
+				"-t",
+				"/workspace/spie2027/data/Human_Breast_Biomarkers_S1_Top_he_image.ome.tif"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "build-st2wsi-after-missingkeys-fix",
+			"type": "shell",
+			"command": "mvn",
+			"args": [
+				"-q",
+				"clean",
+				"package"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "test-st2wsi-cli-after-missingkeys-fix",
+			"type": "shell",
+			"command": "./run_st2wsi.sh",
+			"args": [
+				"-o",
+				"/workspace/spie2027/data/Human_Breast_Biomarkers_S1_Top_outs",
+				"-r",
+				"/workspace/spie2027/data/Human_Breast_Biomarkers_S1_Top_outs/morphology_focus/ch0000_dapi.ome.tif",
+				"-t",
+				"/workspace/spie2027/data/Human_Breast_Biomarkers_S1_Top_he_image.ome.tif"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "install-updated-st2wsi-jar",
+			"type": "shell",
+			"command": "cp",
+			"args": [
+				"target/ST2WSI_Registration-2.6.14-SNAPSHOT.jar",
+				"/opt/Fiji.app/plugins/"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "test-st2wsi-cli-after-install",
+			"type": "shell",
+			"command": "./run_st2wsi.sh",
+			"args": [
+				"-o",
+				"/workspace/spie2027/data/Human_Breast_Biomarkers_S1_Top_outs",
+				"-r",
+				"/workspace/spie2027/data/Human_Breast_Biomarkers_S1_Top_outs/morphology_focus/ch0000_dapi.ome.tif",
+				"-t",
+				"/workspace/spie2027/data/Human_Breast_Biomarkers_S1_Top_he_image.ome.tif"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "build-st2wsi-headless-deconv-fix",
+			"type": "shell",
+			"command": "mvn",
+			"args": [
+				"-q",
+				"clean",
+				"package"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "install-st2wsi-headless-deconv-jar",
+			"type": "shell",
+			"command": "cp",
+			"args": [
+				"target/ST2WSI_Registration-2.6.14-SNAPSHOT.jar",
+				"/opt/Fiji.app/plugins/"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "test-st2wsi-after-headless-fix",
+			"type": "shell",
+			"command": "./run_st2wsi.sh",
+			"args": [
+				"-o",
+				"/workspace/spie2027/data/Human_Breast_Biomarkers_S1_Top_outs",
+				"-r",
+				"/workspace/spie2027/data/Human_Breast_Biomarkers_S1_Top_outs/morphology_focus/ch0000_dapi.ome.tif",
+				"-t",
+				"/workspace/spie2027/data/Human_Breast_Biomarkers_S1_Top_he_image.ome.tif"
+			],
+			"isBackground": false
+		}
+	]
+}

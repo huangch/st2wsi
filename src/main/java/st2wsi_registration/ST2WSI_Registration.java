@@ -143,13 +143,20 @@ public class ST2WSI_Registration implements PlugIn, ActionListener {
         Map<String, String> map = new HashMap<>();
         if (arg == null || arg.trim().isEmpty())
             return map;
-        // Split by whitespace
-        String[] pairs = arg.trim().split("\\s+");
+        // Split by commas or whitespace
+        String[] pairs = arg.trim().split("[,\\s]+");
         for (String pair : pairs) {
             int idx = pair.indexOf('=');
             if (idx > 0 && idx < pair.length() - 1) {
                 String key = pair.substring(0, idx).trim();
                 String value = pair.substring(idx + 1).trim();
+                if (value.length() >= 2) {
+                    char first = value.charAt(0);
+                    char last = value.charAt(value.length() - 1);
+                    if ((first == '\'' && last == '\'') || (first == '"' && last == '"')) {
+                        value = value.substring(1, value.length() - 1);
+                    }
+                }
                 map.put(key, value);
             }
         }
@@ -263,6 +270,97 @@ public class ST2WSI_Registration implements PlugIn, ActionListener {
         return imp;
     }
 
+    private static double[][] invert3x3(double[][] a) {
+        double det =
+            a[0][0] * (a[1][1] * a[2][2] - a[1][2] * a[2][1]) -
+            a[0][1] * (a[1][0] * a[2][2] - a[1][2] * a[2][0]) +
+            a[0][2] * (a[1][0] * a[2][1] - a[1][1] * a[2][0]);
+        if (Math.abs(det) < 1e-12) {
+            throw new IllegalArgumentException("Deconvolution matrix is singular");
+        }
+        double invDet = 1.0 / det;
+        double[][] m = new double[3][3];
+        m[0][0] =  (a[1][1] * a[2][2] - a[1][2] * a[2][1]) * invDet;
+        m[0][1] = -(a[0][1] * a[2][2] - a[0][2] * a[2][1]) * invDet;
+        m[0][2] =  (a[0][1] * a[1][2] - a[0][2] * a[1][1]) * invDet;
+        m[1][0] = -(a[1][0] * a[2][2] - a[1][2] * a[2][0]) * invDet;
+        m[1][1] =  (a[0][0] * a[2][2] - a[0][2] * a[2][0]) * invDet;
+        m[1][2] = -(a[0][0] * a[1][2] - a[0][2] * a[1][0]) * invDet;
+        m[2][0] =  (a[1][0] * a[2][1] - a[1][1] * a[2][0]) * invDet;
+        m[2][1] = -(a[0][0] * a[2][1] - a[0][1] * a[2][0]) * invDet;
+        m[2][2] =  (a[0][0] * a[1][1] - a[0][1] * a[1][0]) * invDet;
+        return m;
+    }
+
+    private static void normalizeVec(double[] v) {
+        double n = Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
+        if (n > 0) {
+            v[0] /= n;
+            v[1] /= n;
+            v[2] /= n;
+        }
+    }
+
+    private static ImagePlus deconvolveHEDHeadless(ImagePlus rgbImg, String tgtChannel) {
+        int w = rgbImg.getWidth();
+        int h = rgbImg.getHeight();
+        ImageProcessor proc = rgbImg.getProcessor();
+        if (!(proc instanceof ColorProcessor)) {
+            throw new IllegalArgumentException("Expected RGB image for deconvolution");
+        }
+
+        int channelIdx = 0;
+        if ("Eosin".equals(tgtChannel)) channelIdx = 1;
+        else if ("Residual".equals(tgtChannel)) channelIdx = 2;
+
+        // H, E, D vectors from colourdeconvolution.txt
+        double[] hVec = new double[] {0.644, 0.717, 0.267};
+        double[] eVec = new double[] {0.093, 0.954, 0.283};
+        double[] dVec = new double[] {0.268, 0.570, 0.776};
+        normalizeVec(hVec);
+        normalizeVec(eVec);
+        normalizeVec(dVec);
+
+        double[][] m = new double[][] {
+            {hVec[0], eVec[0], dVec[0]},
+            {hVec[1], eVec[1], dVec[1]},
+            {hVec[2], eVec[2], dVec[2]}
+        };
+        double[][] inv = invert3x3(m);
+
+        byte[] out = new byte[w * h];
+        int[] rgb = new int[3];
+        final double eps = 1.0;
+
+        for (int y = 0; y < h; y++) {
+            for (int x = 0; x < w; x++) {
+                proc.getPixel(x, y, rgb);
+                double r = rgb[0];
+                double g = rgb[1];
+                double b = rgb[2];
+
+                double odR = -Math.log((r + eps) / 255.0);
+                double odG = -Math.log((g + eps) / 255.0);
+                double odB = -Math.log((b + eps) / 255.0);
+
+                double c0 = inv[0][0] * odR + inv[0][1] * odG + inv[0][2] * odB;
+                double c1 = inv[1][0] * odR + inv[1][1] * odG + inv[1][2] * odB;
+                double c2 = inv[2][0] * odR + inv[2][1] * odG + inv[2][2] * odB;
+
+                double c = channelIdx == 0 ? c0 : (channelIdx == 1 ? c1 : c2);
+                if (c < 0) c = 0;
+
+                int intensity = (int) Math.round(255.0 * Math.exp(-c));
+                if (intensity < 0) intensity = 0;
+                if (intensity > 255) intensity = 255;
+                out[y * w + x] = (byte) (intensity & 0xFF);
+            }
+        }
+
+        ImagePlus gray = new ImagePlus(rgbImg.getTitle() + "-(Colour_" + (channelIdx + 1) + ")", new ByteProcessor(w, h, out, null));
+        return gray;
+    }
+
     @SuppressWarnings("unchecked")
     private static Vector<ImagePlus> getImageList() throws Exception {
         Field field = ImagePlus.class.getDeclaredField("imageList");
@@ -279,6 +377,18 @@ public class ST2WSI_Registration implements PlugIn, ActionListener {
 
         // ---- Parse CLI-style arguments ----
         Map<String, String> params = parseArg(arg);
+        boolean missingCliKeys =
+            !params.containsKey("outputDir") ||
+            !params.containsKey("refImagePath") ||
+            !params.containsKey("tgtImagePath");
+
+        if (params.isEmpty() || missingCliKeys) {
+            String envArg = System.getenv("ST2WSI_ARG");
+            if (envArg != null && !envArg.trim().isEmpty()) {
+                IJ.log("ST2WSI_Registration: using ST2WSI_ARG environment fallback.");
+                params = parseArg(envArg);
+            }
+        }
 
         String outputDir = params.getOrDefault("outputDir", "");
         String refImagePath = params.getOrDefault("refImagePath", "");
@@ -575,32 +685,41 @@ public class ST2WSI_Registration implements PlugIn, ActionListener {
 
                     String title = img.getTitle();
                     IJ.log(String.format("Colour deconvolution for %s", title));
-                    IJ.run(img, "Colour Deconvolution", "vectors=[H&E] hide legend");
+                    if (GraphicsEnvironment.isHeadless()) {
+                        ImagePlus deconv = deconvolveHEDHeadless(img, tgtChannel);
+                        img = deconv;
+                    } else {
+                        IJ.run(img, "Colour Deconvolution", "vectors=[H&E] hide legend");
 
-                    if (tgtChannel.equals(tgtImgChannelOptions[0])) {
-                        img = WindowManager.getImage(title + "-(Colour_1)");
-                        if (WindowManager.getIDList() != null && WindowManager.getImage(title) != null)
-                            WindowManager.getImage(title).close();
-                        if (WindowManager.getIDList() != null && WindowManager.getImage(title + "-(Colour_2)") != null)
-                            WindowManager.getImage(title + "-(Colour_2)").close();
-                        if (WindowManager.getIDList() != null && WindowManager.getImage(title + "-(Colour_3)") != null)
-                            WindowManager.getImage(title + "-(Colour_3)").close();
-                    } else if (tgtChannel.equals(tgtImgChannelOptions[1])) {
-                        img = WindowManager.getImage(title + "-(Colour_2)");
-                        if (WindowManager.getIDList() != null && WindowManager.getImage(title) != null)
-                            WindowManager.getImage(title).close();
-                        if (WindowManager.getIDList() != null && WindowManager.getImage(title + "-(Colour_1)") != null)
-                            WindowManager.getImage(title + "-(Colour_1)").close();
-                        if (WindowManager.getIDList() != null && WindowManager.getImage(title + "-(Colour_3)") != null)
-                            WindowManager.getImage(title + "-(Colour_3)").close();
-                    } else if (tgtChannel.equals(tgtImgChannelOptions[2])) {
-                        img = WindowManager.getImage(title + "-(Colour_3)");
-                        if (WindowManager.getIDList() != null && WindowManager.getImage(title) != null)
-                            WindowManager.getImage(title).close();
-                        if (WindowManager.getIDList() != null && WindowManager.getImage(title + "-(Colour_2)") != null)
-                            WindowManager.getImage(title + "-(Colour_2)").close();
-                        if (WindowManager.getIDList() != null && WindowManager.getImage(title + "-(Colour_1)") != null)
-                            WindowManager.getImage(title + "-(Colour_1)").close();
+                        if (tgtChannel.equals(tgtImgChannelOptions[0])) {
+                            img = WindowManager.getImage(title + "-(Colour_1)");
+                            if (WindowManager.getIDList() != null && WindowManager.getImage(title) != null)
+                                WindowManager.getImage(title).close();
+                            if (WindowManager.getIDList() != null && WindowManager.getImage(title + "-(Colour_2)") != null)
+                                WindowManager.getImage(title + "-(Colour_2)").close();
+                            if (WindowManager.getIDList() != null && WindowManager.getImage(title + "-(Colour_3)") != null)
+                                WindowManager.getImage(title + "-(Colour_3)").close();
+                        } else if (tgtChannel.equals(tgtImgChannelOptions[1])) {
+                            img = WindowManager.getImage(title + "-(Colour_2)");
+                            if (WindowManager.getIDList() != null && WindowManager.getImage(title) != null)
+                                WindowManager.getImage(title).close();
+                            if (WindowManager.getIDList() != null && WindowManager.getImage(title + "-(Colour_1)") != null)
+                                WindowManager.getImage(title + "-(Colour_1)").close();
+                            if (WindowManager.getIDList() != null && WindowManager.getImage(title + "-(Colour_3)") != null)
+                                WindowManager.getImage(title + "-(Colour_3)").close();
+                        } else if (tgtChannel.equals(tgtImgChannelOptions[2])) {
+                            img = WindowManager.getImage(title + "-(Colour_3)");
+                            if (WindowManager.getIDList() != null && WindowManager.getImage(title) != null)
+                                WindowManager.getImage(title).close();
+                            if (WindowManager.getIDList() != null && WindowManager.getImage(title + "-(Colour_2)") != null)
+                                WindowManager.getImage(title + "-(Colour_2)").close();
+                            if (WindowManager.getIDList() != null && WindowManager.getImage(title + "-(Colour_1)") != null)
+                                WindowManager.getImage(title + "-(Colour_1)").close();
+                        }
+                    }
+
+                    if (img == null) {
+                        throw new RuntimeException("Colour deconvolution produced no output image");
                     }
 
                     IJ.run(img, "Invert", "");
