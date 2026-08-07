@@ -61,6 +61,7 @@ import ij.ImageStack;
 import ij.WindowManager;
 import ij.gui.NonBlockingGenericDialog;
 import ij.io.DirectoryChooser;
+import ij.io.FileSaver;
 import ij.plugin.PlugIn;
 import ij.process.ByteProcessor;
 import ij.process.ColorProcessor;
@@ -270,6 +271,70 @@ public class ST2WSI_Registration implements PlugIn, ActionListener {
         return imp;
     }
 
+    /**
+     * Write the two-slice stack plus a magenta/green composite so headless runs
+     * can be checked without a display. Target is green, aligned source magenta;
+     * where they agree the overlap reads grey/white.
+     */
+    private static void saveAlignmentCheck(ImagePlus stackImp, ImageProcessor tgtIp,
+                                           ImageProcessor srcIp, String outputDir,
+                                           String stem) {
+        try {
+            new FileSaver(stackImp).saveAsTiffStack(
+                Paths.get(outputDir, stem + "_stack.tif").toString());
+
+            ImageProcessor t8 = tgtIp.convertToByte(true);
+            ImageProcessor s8 = srcIp.convertToByte(true);
+            int w = Math.min(t8.getWidth(), s8.getWidth());
+            int h = Math.min(t8.getHeight(), s8.getHeight());
+            ColorProcessor cp = new ColorProcessor(w, h);
+            for (int y = 0; y < h; y++) {
+                for (int x = 0; x < w; x++) {
+                    int g = t8.get(x, y) & 0xff;
+                    int m = s8.get(x, y) & 0xff;
+                    cp.set(x, y, (m << 16) | (g << 8) | m);
+                }
+            }
+            new FileSaver(new ImagePlus(stem, cp)).saveAsPng(
+                Paths.get(outputDir, stem + "_overlay.png").toString());
+            IJ.log("  QC written: " + stem + "_stack.tif, " + stem + "_overlay.png");
+        } catch (Exception e) {
+            IJ.log("  WARNING: could not write " + stem + " QC images: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Print the pyramid the way getScalingFactor() sees it, using 1-based indices
+     * so the numbers can be passed straight to refSeries / tgtSeries.
+     */
+    private static void listSeries(String label, String imagePath) {
+        IJ.log(label + ": " + imagePath);
+        try {
+            ImageReader reader = new ImageReader();
+            reader.setId(imagePath);
+            int n = reader.getSeriesCount();
+            reader.setSeries(0);
+            double w0 = reader.getSizeX();
+            double h0 = reader.getSizeY();
+            IJ.log(String.format("  %-7s %-16s %-11s %-7s", "series", "width x height",
+                                 "downsample", "stored"));
+            for (int i = 0; i < n; i++) {
+                reader.setSeries(i);
+                double w = reader.getSizeX();
+                double h = reader.getSizeY();
+                double f = ((w0 / w) + (h0 / h)) / 2.0;
+                int stored = (int) (0.5 + f);
+                String warn = Math.abs(f - stored) > 0.01 * Math.max(stored, 1)
+                    ? "   <-- non-integer: SourceScale/TargetScale will be wrong" : "";
+                IJ.log(String.format("  %-7d %-16s %-11.4f %-7d%s", i + 1,
+                                     ((int) w) + " x " + ((int) h), f, stored, warn));
+            }
+            reader.close();
+        } catch (Exception e) {
+            IJ.log("  ERROR: " + e.getMessage());
+        }
+    }
+
     private static double[][] invert3x3(double[][] a) {
         double det =
             a[0][0] * (a[1][1] * a[2][2] - a[1][2] * a[2][1]) -
@@ -440,6 +505,14 @@ public class ST2WSI_Registration implements PlugIn, ActionListener {
                           !outputDir.isEmpty() &&
                           !refImagePath.isEmpty() &&
                           !tgtImagePath.isEmpty();
+
+        // Series indices mean different downsamples in different files, and CLI
+        // callers cannot see the Bio-Formats importer, so let them look first.
+        if (Boolean.parseBoolean(params.getOrDefault("listSeries", "false"))) {
+            if (!refImagePath.isEmpty()) listSeries("reference (DAPI)", refImagePath);
+            if (!tgtImagePath.isEmpty()) listSeries("target (H&E)", tgtImagePath);
+            return;
+        }
 
         ImagePlus refImg = null;
         ImagePlus tgtImg = null;
@@ -911,6 +984,9 @@ public class ST2WSI_Registration implements PlugIn, ActionListener {
                 new ImagePlus("Transformed (SIFT only) result", transformedStack);
             if (!headless && WindowManager.getIDList() != null)
                 transformedStackImg.show();
+            // This is the transform wsitrain consumes, so QC it even without a display.
+            saveAlignmentCheck(transformedStackImg, tgtImg.getProcessor(),
+                               transformedIp, outputDir, "alignment_sift");
             if (WindowManager.getIDList() != null && WindowManager.getWindow("Log") != null)
                 WindowManager.getWindow("Log").toFront();
 
@@ -945,9 +1021,11 @@ public class ST2WSI_Registration implements PlugIn, ActionListener {
             double[][] cy_direct = warp.getDirectDeformationCoefficientsY();
             int intervals = warp.getIntervals();
 
+            // applyTransformationMT writes in place, and the SIFT-only stack holds this
+            // same ImageProcessor -- without a copy both result windows show the warp.
             ImagePlus refTransformedWarpedImg = new ImagePlus(
                 refTransformedImg.getTitle() + "_warped",
-                refTransformedImg.getProcessor()
+                refTransformedImg.getProcessor().duplicate()
             );
             BSplineModel warpModel = new BSplineModel(
                 refTransformedWarpedImg.getProcessor(),
@@ -978,6 +1056,9 @@ public class ST2WSI_Registration implements PlugIn, ActionListener {
             );
             if (!headless && WindowManager.getIDList() != null)
                 transformedWarpedStackImg.show();
+            saveAlignmentCheck(transformedWarpedStackImg, tgtImg.getProcessor(),
+                               refTransformedWarpedImg.getProcessor(), outputDir,
+                               "alignment_bunwarpj");
             if (WindowManager.getIDList() != null && WindowManager.getWindow("Log") != null)
                 WindowManager.getWindow("Log").toFront();
 
