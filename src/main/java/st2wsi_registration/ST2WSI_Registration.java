@@ -49,7 +49,13 @@ package st2wsi_registration;
  *        tgtSeries=3 \
  *        refFlipped=false \
  *        refRotated=90 \
- *        tgtChannel=Hematoxylon"
+ *        tgtChannel=Hematoxylon \
+ *        tgtStain=[H&E 2]"
+ *
+ * tgtStain picks the colour-deconvolution vector set from
+ * colourdeconvolution.txt: "H&E" (default) or "H&E 2". Slides whose
+ * haematoxylin separates poorly under one set often register cleanly under
+ * the other, so this is worth trying before declaring a slide unregistrable.
  *
  * This plugin builds upon bUnwarpJ by Ignacio Arganda-Carreras and Jan Kybic,
  * and the SIFT implementation from MPICBG by Stephan Saalfeld.
@@ -144,8 +150,37 @@ public class ST2WSI_Registration implements PlugIn, ActionListener {
         Map<String, String> map = new HashMap<>();
         if (arg == null || arg.trim().isEmpty())
             return map;
-        // Split by commas or whitespace
-        String[] pairs = arg.trim().split("[,\\s]+");
+        // Values may contain spaces when bracketed or quoted ("H&E 2"), so split
+        // on separators only at bracket/quote depth zero.
+        List<String> pairs = new ArrayList<>();
+        StringBuilder cur = new StringBuilder();
+        char quote = 0;
+        int depth = 0;
+        for (int i = 0; i < arg.trim().length(); i++) {
+            char c = arg.trim().charAt(i);
+            if (quote != 0) {
+                if (c == quote) quote = 0;
+                cur.append(c);
+            } else if (c == '\'' || c == '"') {
+                quote = c;
+                cur.append(c);
+            } else if (c == '[') {
+                depth++;
+                cur.append(c);
+            } else if (c == ']') {
+                if (depth > 0) depth--;
+                cur.append(c);
+            } else if (depth == 0 && (c == ',' || Character.isWhitespace(c))) {
+                if (cur.length() > 0) {
+                    pairs.add(cur.toString());
+                    cur.setLength(0);
+                }
+            } else {
+                cur.append(c);
+            }
+        }
+        if (cur.length() > 0) pairs.add(cur.toString());
+
         for (String pair : pairs) {
             int idx = pair.indexOf('=');
             if (idx > 0 && idx < pair.length() - 1) {
@@ -154,7 +189,9 @@ public class ST2WSI_Registration implements PlugIn, ActionListener {
                 if (value.length() >= 2) {
                     char first = value.charAt(0);
                     char last = value.charAt(value.length() - 1);
-                    if ((first == '\'' && last == '\'') || (first == '"' && last == '"')) {
+                    if ((first == '\'' && last == '\'')
+                            || (first == '"' && last == '"')
+                            || (first == '[' && last == ']')) {
                         value = value.substring(1, value.length() - 1);
                     }
                 }
@@ -366,7 +403,24 @@ public class ST2WSI_Registration implements PlugIn, ActionListener {
         }
     }
 
-    private static ImagePlus deconvolveHEDHeadless(ImagePlus rgbImg, String tgtChannel) {
+    /** Stain vectors as published in colourdeconvolution.txt. */
+    private static double[][] stainVectors(String stain) {
+        if ("H&E 2".equals(stain)) {
+            return new double[][] {
+                {0.49015734, 0.76897085, 0.41040173},
+                {0.04615336, 0.84206840, 0.53739250},
+                {0.0, 0.0, 0.0}
+            };
+        }
+        return new double[][] {
+            {0.644211, 0.716556, 0.266844},
+            {0.092789, 0.954111, 0.283111},
+            {0.0, 0.0, 0.0}
+        };
+    }
+
+    private static ImagePlus deconvolveHEDHeadless(ImagePlus rgbImg, String tgtChannel,
+                                                   String stain) {
         int w = rgbImg.getWidth();
         int h = rgbImg.getHeight();
         ImageProcessor proc = rgbImg.getProcessor();
@@ -378,12 +432,22 @@ public class ST2WSI_Registration implements PlugIn, ActionListener {
         if ("Eosin".equals(tgtChannel)) channelIdx = 1;
         else if ("Residual".equals(tgtChannel)) channelIdx = 2;
 
-        // H, E, D vectors from colourdeconvolution.txt
-        double[] hVec = new double[] {0.644, 0.717, 0.267};
-        double[] eVec = new double[] {0.093, 0.954, 0.283};
-        double[] dVec = new double[] {0.268, 0.570, 0.776};
+        double[][] v = stainVectors(stain);
+        double[] hVec = v[0].clone();
+        double[] eVec = v[1].clone();
+        double[] dVec = v[2].clone();
         normalizeVec(hVec);
         normalizeVec(eVec);
+        // colourdeconvolution.txt leaves the third vector zero for two-stain
+        // recipes; Ruifrok's method fills it with the cross product so the
+        // basis stays invertible.
+        if (dVec[0] == 0 && dVec[1] == 0 && dVec[2] == 0) {
+            dVec = new double[] {
+                hVec[1] * eVec[2] - hVec[2] * eVec[1],
+                hVec[2] * eVec[0] - hVec[0] * eVec[2],
+                hVec[0] * eVec[1] - hVec[1] * eVec[0]
+            };
+        }
         normalizeVec(dVec);
 
         double[][] m = new double[][] {
@@ -465,6 +529,7 @@ public class ST2WSI_Registration implements PlugIn, ActionListener {
         String refRotated = params.getOrDefault("refRotated", "90");
 
         String tgtChannel = params.getOrDefault("tgtChannel", "Hematoxylon");
+        String tgtStain = params.getOrDefault("tgtStain", "H&E");
         float pxlSz = Float.parseFloat(params.getOrDefault("pxlSz", "0.2125"));
 
         // Denoising
@@ -526,6 +591,7 @@ public class ST2WSI_Registration implements PlugIn, ActionListener {
         String[] refImgRotationOptions = new String[] { "-270", "-180", "-90", "0", "90", "180", "270" };
         String[] imgSeriesOptions = new String[] { "1", "2", "3", "4", "5", "6", "7", "8" };
         String[] tgtImgChannelOptions = new String[] { "Hematoxylon", "Eosin", "Residual" };
+        String[] tgtImgStainOptions = new String[] { "H&E", "H&E 2" };
 
         try {
 
@@ -595,6 +661,7 @@ public class ST2WSI_Registration implements PlugIn, ActionListener {
                 gd.addNumericField("Reference image pixel dimension:", pxlSz, 4, 6, "um");
                 gd.addToSameRow();
                 gd.addChoice("Channel of target image to be used?", tgtImgChannelOptions, tgtChannel);
+                gd.addChoice("Colour deconvolution vectors:", tgtImgStainOptions, tgtStain);
 
                 gd.addMessage("=== Denoising Parameters ===");
                 gd.addNumericField("Rolling in Subtract Background:", rolling, 2);
@@ -666,6 +733,7 @@ public class ST2WSI_Registration implements PlugIn, ActionListener {
                 refRotated = refImgRotationOptions[gd.getNextChoiceIndex()];
                 pxlSz = (float) gd.getNextNumber();
                 tgtChannel = tgtImgChannelOptions[gd.getNextChoiceIndex()];
+                tgtStain = tgtImgStainOptions[gd.getNextChoiceIndex()];
                 rolling = (int) gd.getNextNumber();
                 sigma = (float) gd.getNextNumber();
                 siftParam.initialSigma = (float) gd.getNextNumber();
@@ -703,6 +771,18 @@ public class ST2WSI_Registration implements PlugIn, ActionListener {
             // -------- Common pipeline: SIFT + bUnwarpJ --------
 
             IJ.log("ST2WSI starts...");
+            // Swapping the two paths still produces a convincing overlay, because
+            // registration is near-symmetric -- but the transform then maps H&E
+            // to DAPI and every downstream cell lands off-nucleus. The RGB slide
+            // is the target by definition, so say so before hours are wasted.
+            if (refImg.getType() == ImagePlus.COLOR_RGB
+                    && tgtImg.getType() != ImagePlus.COLOR_RGB) {
+                IJ.log("WARNING: the reference image is RGB and the target is not.");
+                IJ.log("         refImagePath should be the DAPI/ST image and");
+                IJ.log("         tgtImagePath the H&E WSI. Check the two paths:");
+                IJ.log("           ref = " + refImagePath);
+                IJ.log("           tgt = " + tgtImagePath);
+            }
             if (WindowManager.getIDList() != null && WindowManager.getWindow("Log") != null)
                 WindowManager.getWindow("Log").toFront();
 
@@ -757,12 +837,14 @@ public class ST2WSI_Registration implements PlugIn, ActionListener {
                     img.getType() == ImagePlus.COLOR_RGB) {
 
                     String title = img.getTitle();
-                    IJ.log(String.format("Colour deconvolution for %s", title));
+                    IJ.log(String.format("Colour deconvolution for %s (vectors=%s, channel=%s)",
+                                         title, tgtStain, tgtChannel));
                     if (GraphicsEnvironment.isHeadless()) {
-                        ImagePlus deconv = deconvolveHEDHeadless(img, tgtChannel);
+                        ImagePlus deconv = deconvolveHEDHeadless(img, tgtChannel, tgtStain);
                         img = deconv;
                     } else {
-                        IJ.run(img, "Colour Deconvolution", "vectors=[H&E] hide legend");
+                        IJ.run(img, "Colour Deconvolution",
+                               "vectors=[" + tgtStain + "] hide legend");
 
                         if (tgtChannel.equals(tgtImgChannelOptions[0])) {
                             img = WindowManager.getImage(title + "-(Colour_1)");

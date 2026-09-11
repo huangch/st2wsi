@@ -15,6 +15,7 @@ TGT_SERIES=3
 REF_FLIPPED=false
 REF_ROTATED=90
 TGT_CHANNEL="Hematoxylon"
+TGT_STAIN="H&E"
 
 usage() {
     cat <<EOF
@@ -30,7 +31,8 @@ Optional:
   --tgt-series        INT     Series index in target image (default: $TGT_SERIES)
   --ref-flipped               Horizontally flip the reference image (default: $REF_FLIPPED)
   --ref-rotated       DEG     Rotation of reference in degrees: 0, 90, 180, 270 (default: $REF_ROTATED)
-  --tgt-channel       NAME    Colour deconvolution channel: Hematoxylon, Eosin, DAB (default: $TGT_CHANNEL)
+  --tgt-channel       NAME    Colour deconvolution channel: Hematoxylon, Eosin, Residual (default: $TGT_CHANNEL)
+  --tgt-stain         NAME    Colour deconvolution vectors: 'H&E' or 'H&E 2' (default: $TGT_STAIN)
   --fiji              PATH    Path to Fiji ImageJ-linux64 binary (default: \$FIJI_PATH or $FIJI)
   -h, --help                  Show this help message
 EOF
@@ -48,6 +50,7 @@ while [[ $# -gt 0 ]]; do
         --ref-flipped)     REF_FLIPPED=true; shift ;;
         --ref-rotated)     REF_ROTATED="$2"; shift 2 ;;
         --tgt-channel)     TGT_CHANNEL="$2"; shift 2 ;;
+        --tgt-stain)       TGT_STAIN="$2"; shift 2 ;;
         --fiji)            FIJI="$2"; shift 2 ;;
         -h|--help)         usage ;;
         *) echo "Unknown option: $1"; usage ;;
@@ -69,8 +72,10 @@ mkdir -p "$OUTPUT_DIR"
 echo "Running ST2WSI_Registration..."
 echo "  Output dir  : $OUTPUT_DIR"
 echo "  Reference   : $REF_IMAGE (series=$REF_SERIES, flipped=$REF_FLIPPED, rotated=$REF_ROTATED)"
-echo "  Target      : $TGT_IMAGE (series=$TGT_SERIES, channel=$TGT_CHANNEL)"
+echo "  Target      : $TGT_IMAGE (series=$TGT_SERIES, channel=$TGT_CHANNEL, stain=$TGT_STAIN)"
 
+# The plugin splits its argument string on whitespace, so a stain name
+# containing a space has to reach it bracketed.
 PLUGIN_ARG="outputDir=$OUTPUT_DIR \
 refImagePath=$REF_IMAGE \
 tgtImagePath=$TGT_IMAGE \
@@ -78,7 +83,8 @@ refSeries=$REF_SERIES \
 tgtSeries=$TGT_SERIES \
 refFlipped=$REF_FLIPPED \
 refRotated=$REF_ROTATED \
-tgtChannel=$TGT_CHANNEL"
+tgtChannel=$TGT_CHANNEL \
+tgtStain=[$TGT_STAIN]"
 
 ST2WSI_ARG="$PLUGIN_ARG" \
 "$FIJI" --headless --ij2 \
